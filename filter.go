@@ -106,6 +106,13 @@ func filterExplicitField(obj interface{}, farg, field string) (interface{}, erro
 	// log.Printf("ef: %v, %q, %s", obj, farg, field)
 	rfarg := strings.TrimPrefix(farg, fmt.Sprintf(".%s", field))
 	if v, ok := obj.(map[string]interface{}); ok {
+		if rfarg == "" {
+			if _, ok := v[field]; ok {
+				return v, nil
+			} else {
+				return nil, errors.New("field not present")
+			}
+		}
 		subobj, err := filter(v[field], rfarg)
 		if err != nil {
 			return nil, err
