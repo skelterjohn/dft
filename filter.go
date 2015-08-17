@@ -3,13 +3,19 @@ package main
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
+)
+
+var (
+	regexps = map[string]*regexp.Regexp{}
 )
 
 func filterExactValue(obj interface{}, farg string) (interface{}, error) {
 	// log.Printf("fev: %v, %q", obj, farg)
 	vstr := farg[1:]
+
 	switch v := obj.(type) {
 	case int:
 		if fv, err := strconv.ParseInt(vstr, 10, 64); err == nil && int(fv) == v {
@@ -20,7 +26,16 @@ func filterExactValue(obj interface{}, farg string) (interface{}, error) {
 			return obj, nil
 		}
 	case string:
-		if vstr == v {
+
+		if _, ok := regexps[vstr]; !ok {
+			re, err := regexp.Compile(vstr)
+			if err != nil {
+				return nil, err
+			}
+			regexps[vstr] = re
+		}
+		re := regexps[vstr]
+		if re.MatchString(v) {
 			return obj, nil
 		}
 	}
