@@ -11,7 +11,10 @@ import (
 	"unicode"
 )
 
-var errUnrecognizedOp = errors.New("unrecognized operation")
+var (
+	errUnrecognizedOp = errors.New("unrecognized operation")
+	errIllegalOp      = errors.New("illegal operation")
+)
 
 func init() {
 	log.SetFlags(0)
@@ -27,7 +30,7 @@ func main() {
 	for _, arg := range os.Args[1:] {
 		var err error
 		obj, err = ft(obj, arg)
-		if err == errUnrecognizedOp {
+		if err == errUnrecognizedOp || err == errIllegalOp {
 			log.Fatalf("error with %q: %v", arg, err)
 		}
 		if err != nil {
@@ -81,6 +84,10 @@ func filter(obj interface{}, farg string) (interface{}, error) {
 
 	if filters, ok := matchMulti(farg); ok {
 		return filterMulti(obj, farg, filters)
+	}
+
+	if includes, ok := matchCut(farg); ok {
+		return filterCut(obj, farg, includes)
 	}
 
 	return obj, errUnrecognizedOp
@@ -155,14 +162,14 @@ loop:
 				return "", false
 			}
 		case state_open:
-			if unicode.IsLetter(c) {
+			if unicode.IsLetter(c) || unicode.IsDigit(c) {
 				state = state_first
 				res += string(c)
 			} else {
 				return "", false
 			}
 		case state_first:
-			if unicode.IsLetter(c) {
+			if unicode.IsLetter(c) || unicode.IsDigit(c) {
 				state = state_rest
 				res += string(c)
 			} else {
@@ -201,6 +208,7 @@ func matchMulti(farg string) ([]string, bool) {
 			depth -= 1
 		case c == ',' && depth == 1:
 			filters = append(filters, curfilter)
+			curfilter = ""
 		case c == '{' && depth > 1:
 			curfilter += string(c)
 			depth += 1
@@ -217,6 +225,13 @@ func matchMulti(farg string) ([]string, bool) {
 		}
 	}
 	return filters, depth == 0
+}
+
+func matchCut(farg string) ([]string, bool) {
+	if !strings.HasPrefix(farg, "@") {
+		return nil, false
+	}
+	return strings.Split(farg[1:], ","), true
 }
 
 func filterExactValue(obj interface{}, farg string) (interface{}, error) {
@@ -338,4 +353,35 @@ func filterMulti(obj interface{}, farg string, filters []string) (interface{}, e
 		}
 	}
 	return obj, nil
+}
+
+func filterCut(obj interface{}, farg string, includes []string) (interface{}, error) {
+	// log.Printf("fc: %v %q %q", obj, farg, includes)
+	switch v := obj.(type) {
+	case []interface{}:
+		var r []interface{}
+		for _, inc := range includes {
+			index, err := strconv.ParseInt(inc, 10, 64)
+			idx := int(index)
+			if err != nil {
+				return nil, errIllegalOp
+			}
+			if idx < len(v) {
+				r = append(r, v[idx])
+			}
+		}
+		return r, nil
+	case map[string]interface{}:
+		r := map[string]interface{}{}
+		for _, inc := range includes {
+			if sv, ok := v[inc]; ok {
+				// log.Printf("including %q", inc)
+				r[inc] = sv
+			}
+		}
+		// log.Printf("fc ret %v", r)
+		return r, nil
+	default:
+		return nil, errIllegalOp
+	}
 }
