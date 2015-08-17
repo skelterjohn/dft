@@ -4,6 +4,14 @@ Data comes in on stdin, formatted as a json blob (for now), and comes out in the
 
 `Usage: dft [FILTER|TRANSFORM]*`
 
+Each filter and transform is applied to the entire object in the order they appear on the command line.
+
+#examples#
+
+one day...
+
+#specification#
+
 ##filters##
 
 A filter begins with the string `f:`, and then has operators that dig into the object and compare values against provided input.
