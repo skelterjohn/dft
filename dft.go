@@ -47,6 +47,9 @@ func ft(obj interface{}, arg string) (interface{}, error) {
 	if strings.HasPrefix(arg, "f:") {
 		return filter(obj, strings.TrimPrefix(arg, "f:"))
 	}
+	if strings.HasPrefix(arg, "t:") {
+		return transform(obj, strings.TrimPrefix(arg, "t:"))
+	}
 	return obj, errUnrecognizedOp
 }
 
@@ -90,3 +93,99 @@ func filter(obj interface{}, farg string) (interface{}, error) {
 
 	return obj, errUnrecognizedOp
 }
+
+func transform(obj interface{}, targ string) (interface{}, error) {
+	// log.Printf("transform %q", targ)
+
+	if targ == "" {
+		return nil, errUnrecognizedOp
+	}
+
+	if strings.HasPrefix(targ, "[]") {
+		return transformAllIndices(obj, targ)
+	}
+	if strings.HasPrefix(targ, ".()") {
+		return transformAllFields(obj, targ)
+	}
+
+	if index, ok := matchExactIndex(targ); ok {
+		return transformExplicitIndex(obj, targ, index)
+	}
+	if field, ok := matchExactField(targ); ok {
+		return transformExplicitField(obj, targ, field)
+	}
+
+	if from, to, ok := matchReplace(targ); ok {
+		return replace(obj, from, to)
+	}
+
+	return obj, nil
+}
+
+func replace(obj interface{}, from, to string) (interface{}, error) {
+	// log.Printf("replace %q %q", from, to)
+	v, err := getValue(obj, from)
+	if err != nil {
+		return nil, err
+	}
+
+	r, err := setValue(obj, to, v)
+	if err != nil {
+		return nil, err
+	}
+
+	return r, nil
+}
+
+func getValue(obj interface{}, from string) (interface{}, error) {
+	// log.Printf("gv %q", from)
+	if from == "" {
+		return obj, nil
+	}
+	if index, ok := matchExactIndex(from); ok {
+		return getExplicitIndex(obj, from, index)
+	}
+	if field, ok := matchExactField(from); ok {
+		return getExplicitField(obj, from, field)
+	}
+
+	return nil, errIllegalOp
+}
+
+func setValue(obj interface{}, to string, v interface{}) (interface{}, error) {
+	// log.Printf("sv %q %v", to, v)
+	if to == "" {
+		return v, nil
+	}
+
+	if index, ok := matchExactIndex(to); ok {
+		return setExplicitIndex(obj, to, v, index)
+	}
+	if field, ok := matchExactField(to); ok {
+		return setExplicitField(obj, to, v, field)
+	}
+
+	return nil, errIllegalOp
+}
+
+/*
+$ dft \
+  'f:[].metadata.items[E]{.key=foremanID,.value=foreman-not-on-borg-jasmuth}' \
+  't:[]{.networkInterfaces[0].accessConfigs[0].natIP=.ip}' \
+  'f:[]@name,ip' < in.txt
+[
+  {
+    "name": "worker-ecba9d66-1c90-465c-8dd0-12e3ae867b66",
+    "networkInterfaces": [
+      {
+        "accessConfigs": [
+          {
+            "natIP": "104.197.86.174"
+          }
+        ]
+      }
+    ]
+  }
+]
+
+*/

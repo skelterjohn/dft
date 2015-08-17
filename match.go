@@ -100,7 +100,7 @@ loop:
 			break loop
 		}
 	}
-	return res, state == state_close
+	return res, state != state_open
 }
 
 func matchMulti(farg string) ([]string, bool) {
@@ -146,4 +146,18 @@ func matchCut(farg string) ([]string, bool) {
 		return nil, false
 	}
 	return strings.Split(farg[1:], ","), true
+}
+
+func matchReplace(targ string) (from, to string, ok bool) {
+	if !strings.HasPrefix(targ, "{") {
+		return "", "", false
+	}
+	if !strings.HasSuffix(targ, "}") {
+		return "", "", false
+	}
+	tokens := strings.Split(targ[1:len(targ)-1], "=")
+	if len(tokens) != 2 {
+		return "", "", false
+	}
+	return tokens[0], tokens[1], true
 }
