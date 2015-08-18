@@ -39,7 +39,7 @@ func main() {
 				log.Fatalf("error with %q: %v", arg, err)
 			}
 			if err != nil {
-				return
+				continue
 			}
 		}
 
