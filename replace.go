@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -16,14 +15,14 @@ func getExplicitIndex(obj interface{}, from, index string) (interface{}, error) 
 	}
 	if v, ok := obj.([]interface{}); ok {
 		if int(idx) >= len(v) {
-			return nil, errors.New("index not found")
+			return nil, errNotFound
 		}
 		if sr, err := getValue(v[idx], rfrom); err == nil {
 			return sr, nil
 		}
-		return nil, errors.New("value not found")
+		return nil, errNotFound
 	}
-	return nil, errors.New("not a list")
+	return nil, errNotList
 
 }
 
@@ -34,11 +33,11 @@ func getExplicitField(obj interface{}, from, field string) (interface{}, error) 
 			if sr, err := getValue(sv, rfrom); err == nil {
 				return sr, nil
 			}
-			return nil, errors.New("value not found")
+			return nil, errNotFound
 		}
-		return nil, errors.New("field not found")
+		return nil, errNotFound
 	}
-	return nil, errors.New("not a structure")
+	return nil, errNotStruct
 }
 
 func setExplicitIndex(obj interface{}, to string, setv interface{}, index string) (interface{}, error) {
@@ -50,7 +49,7 @@ func setExplicitIndex(obj interface{}, to string, setv interface{}, index string
 
 	v, ok := obj.([]interface{})
 	if !ok {
-		return nil, errors.New("not a list")
+		return nil, errNotList
 	}
 
 	// build up the list if it's not big enough
@@ -84,7 +83,7 @@ func setExplicitField(obj interface{}, to string, setv interface{}, field string
 	rto := strings.TrimPrefix(to, fmt.Sprintf(".%s", field))
 	v, ok := obj.(map[string]interface{})
 	if !ok {
-		return nil, errors.New("not a structure")
+		return nil, errNotStruct
 	}
 
 	if rto == "" {

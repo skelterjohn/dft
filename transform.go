@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -19,7 +18,7 @@ func transformAllIndices(obj interface{}, targ string) (interface{}, error) {
 		}
 		return v, nil
 	}
-	return nil, errors.New("not a list")
+	return nil, errNotList
 }
 
 func transformExplicitIndex(obj interface{}, targ, index string) (interface{}, error) {
@@ -36,7 +35,7 @@ func transformExplicitIndex(obj interface{}, targ, index string) (interface{}, e
 		}
 		return v, nil
 	}
-	return nil, errors.New("not a list")
+	return nil, errNotList
 }
 
 func transformAllFields(obj interface{}, targ string) (interface{}, error) {
@@ -51,7 +50,7 @@ func transformAllFields(obj interface{}, targ string) (interface{}, error) {
 		}
 		return v, nil
 	}
-	return nil, errors.New("not a structure")
+	return nil, errNotStruct
 }
 
 func transformExplicitField(obj interface{}, targ, field string) (interface{}, error) {
@@ -64,5 +63,5 @@ func transformExplicitField(obj interface{}, targ, field string) (interface{}, e
 		}
 		return v, nil
 	}
-	return nil, errors.New("not a structure")
+	return nil, errNotStruct
 }

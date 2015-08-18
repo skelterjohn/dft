@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -39,7 +38,7 @@ func filterExactValue(obj interface{}, farg string) (interface{}, error) {
 			return obj, nil
 		}
 	}
-	return nil, errors.New("mismatch value")
+	return nil, errNotMatched
 }
 
 func filterListExcludeMiss(obj interface{}, farg string) (interface{}, error) {
@@ -55,7 +54,7 @@ func filterListExcludeMiss(obj interface{}, farg string) (interface{}, error) {
 		}
 		return r, nil
 	}
-	return nil, errors.New("not a list")
+	return nil, errNotList
 }
 
 func filterListAtLeastOne(obj interface{}, farg string) (interface{}, error) {
@@ -66,9 +65,9 @@ func filterListAtLeastOne(obj interface{}, farg string) (interface{}, error) {
 				return obj, nil
 			}
 		}
-		return nil, fmt.Errorf("no matches for %q", rfarg)
+		return nil, errNotMatched
 	}
-	return nil, errors.New("not a list")
+	return nil, errNotList
 }
 
 func filterFieldsExcludeMiss(obj interface{}, farg string) (interface{}, error) {
@@ -83,7 +82,7 @@ func filterFieldsExcludeMiss(obj interface{}, farg string) (interface{}, error) 
 		}
 		return r, nil
 	}
-	return nil, errors.New("not a structure")
+	return nil, errNotStruct
 }
 
 func filterFieldsAtLeastOne(obj interface{}, farg string) (interface{}, error) {
@@ -94,9 +93,9 @@ func filterFieldsAtLeastOne(obj interface{}, farg string) (interface{}, error) {
 				return obj, nil
 			}
 		}
-		return nil, fmt.Errorf("no matches for %q", rfarg)
+		return nil, errNotMatched
 	}
-	return nil, errors.New("not a structure")
+	return nil, errNotStruct
 }
 
 func filterExplicitIndex(obj interface{}, farg, index string) (interface{}, error) {
@@ -106,36 +105,51 @@ func filterExplicitIndex(obj interface{}, farg, index string) (interface{}, erro
 		panic(fmt.Sprintf("somehow got bad strconv.ParseInt(%q): %v", index, err))
 	}
 	rfarg := strings.TrimPrefix(farg, fmt.Sprintf("[%s]", index))
-	if v, ok := obj.([]interface{}); ok {
-		subobj, err := filter(v[idx], rfarg)
-		if err != nil {
-			return nil, err
-		}
-		v[idx] = subobj
-		return v, nil
+
+	v, ok := obj.([]interface{})
+	if !ok {
+		return nil, errNotList
 	}
-	return nil, errors.New("not a list")
+
+	if rfarg == "" {
+		if int(idx) < len(v) {
+			return v, nil
+		} else {
+			return nil, errNotFound
+		}
+	}
+
+	subobj, err := filter(v[idx], rfarg)
+	if err != nil {
+		return nil, err
+	}
+	v[idx] = subobj
+	return v, nil
 }
 
 func filterExplicitField(obj interface{}, farg, field string) (interface{}, error) {
 	// log.Printf("ef: %v, %q, %s", obj, farg, field)
 	rfarg := strings.TrimPrefix(farg, fmt.Sprintf(".%s", field))
-	if v, ok := obj.(map[string]interface{}); ok {
-		if rfarg == "" {
-			if _, ok := v[field]; ok {
-				return v, nil
-			} else {
-				return nil, errors.New("field not present")
-			}
-		}
-		subobj, err := filter(v[field], rfarg)
-		if err != nil {
-			return nil, err
-		}
-		v[field] = subobj
-		return v, nil
+
+	v, ok := obj.(map[string]interface{})
+	if !ok {
+		return obj, nil
 	}
-	return obj, nil
+
+	if rfarg == "" {
+		if _, ok := v[field]; ok {
+			return v, nil
+		} else {
+			return nil, errNotFound
+		}
+	}
+
+	subobj, err := filter(v[field], rfarg)
+	if err != nil {
+		return nil, err
+	}
+	v[field] = subobj
+	return v, nil
 }
 
 func filterMulti(obj interface{}, farg string, filters []string) (interface{}, error) {

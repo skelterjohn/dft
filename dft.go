@@ -14,6 +14,11 @@ import (
 var (
 	errUnrecognizedOp = errors.New("unrecognized operation")
 	errIllegalOp      = errors.New("illegal operation")
+
+	errNotList    = errors.New("not a list")
+	errNotStruct  = errors.New("not a structure")
+	errNotFound   = errors.New("not found")
+	errNotMatched = errors.New("values do not match")
 )
 
 func init() {
@@ -37,12 +42,15 @@ func main() {
 		for i, arg := range args {
 			var err error
 			obj, err = ft(obj, arg)
-			if err == errUnrecognizedOp || err == errIllegalOp {
-				log.Fatalf("error with %q: %v", arg, err)
-			}
+			// if err == errUnrecognizedOp || err == errIllegalOp {
 			if err != nil {
+				log.Fatalf("error with %q: %v", arg, err)
 				continue
 			}
+			// }
+			// if err != nil {
+			// 	continue
+			// }
 
 			if obj == nil {
 				if i != len(args)-1 {
@@ -157,7 +165,7 @@ func replace(obj interface{}, to, from string) (interface{}, error) {
 
 	r, err := setValue(obj, to, v)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not set %q: %v", to, err)
 	}
 
 	return r, nil
