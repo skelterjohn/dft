@@ -10,6 +10,7 @@ Each filter and transform is applied to the entire object in the order they appe
 
 ####filter Google Compute Engine instances by metadata key####
 
+Real instance lists would have a lot more data, but I trimmed it down for readability (by humans...dft doesn't mind at all).
 ```
 $ cat in.json 
 [
