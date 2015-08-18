@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"text/template"
 )
 
 var (
@@ -32,7 +33,8 @@ func main() {
 			log.Fatalf("error reading stdin: %v", err)
 		}
 
-		for _, arg := range os.Args[1:] {
+		args := os.Args[1:]
+		for i, arg := range args {
 			var err error
 			obj, err = ft(obj, arg)
 			if err == errUnrecognizedOp || err == errIllegalOp {
@@ -40,6 +42,13 @@ func main() {
 			}
 			if err != nil {
 				continue
+			}
+
+			if obj == nil {
+				if i != len(args)-1 {
+					log.Printf("unused args: %q", args[i+1:])
+				}
+				break
 			}
 		}
 
@@ -56,13 +65,18 @@ func main() {
 }
 
 func ft(obj interface{}, arg string) (interface{}, error) {
-	if strings.HasPrefix(arg, "f:") {
+	switch {
+	case strings.HasPrefix(arg, "f:"):
 		return filter(obj, strings.TrimPrefix(arg, "f:"))
-	}
-	if strings.HasPrefix(arg, "t:") {
+	case strings.HasPrefix(arg, "t:"):
 		return transform(obj, strings.TrimPrefix(arg, "t:"))
+	case strings.HasPrefix(arg, "templatefile:"):
+		return nil, printTemplateFile(obj, strings.TrimPrefix(arg, "templatefile:"))
+	case strings.HasPrefix(arg, "template:"):
+		return nil, printTemplate(obj, strings.TrimPrefix(arg, "template:"))
+	default:
+		return nil, errUnrecognizedOp
 	}
-	return obj, errUnrecognizedOp
 }
 
 func filter(obj interface{}, farg string) (interface{}, error) {
@@ -180,24 +194,20 @@ func setValue(obj interface{}, to string, v interface{}) (interface{}, error) {
 	return nil, errIllegalOp
 }
 
-/*
-$ dft \
-  'f:[].metadata.items[E]{.key=foremanID,.value=foreman-not-on-borg-jasmuth}' \
-  't:[]{.networkInterfaces[0].accessConfigs[0].natIP=.ip}' \
-  'f:[]@name,ip' < in.txt
-[
-  {
-    "name": "worker-ecba9d66-1c90-465c-8dd0-12e3ae867b66",
-    "networkInterfaces": [
-      {
-        "accessConfigs": [
-          {
-            "natIP": "104.197.86.174"
-          }
-        ]
-      }
-    ]
-  }
-]
+func printTemplateFile(obj interface{}, filename string) error {
+	tmpl, err := template.ParseFiles(filename)
+	if err != nil {
+		return err
+	}
 
-*/
+	return tmpl.Execute(os.Stdout, obj)
+}
+
+func printTemplate(obj interface{}, format string) error {
+	tmpl, err := template.New("dft").Parse(format)
+	if err != nil {
+		return err
+	}
+
+	return tmpl.Execute(os.Stdout, obj)
+}
