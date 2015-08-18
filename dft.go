@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strings"
@@ -20,26 +21,37 @@ func init() {
 }
 
 func main() {
-	var obj interface{}
-	if err := json.NewDecoder(os.Stdin).Decode(&obj); err != nil {
-		log.Fatalf("error reading stdin: %v", err)
-	}
+	dec := json.NewDecoder(os.Stdin)
 
-	for _, arg := range os.Args[1:] {
-		var err error
-		obj, err = ft(obj, arg)
-		if err == errUnrecognizedOp || err == errIllegalOp {
-			log.Fatalf("error with %q: %v", arg, err)
+	for {
+		var obj interface{}
+		if err := dec.Decode(&obj); err != nil {
+			if err == io.EOF {
+				return
+			}
+			log.Fatalf("error reading stdin: %v", err)
 		}
-		if err != nil {
-			return
-		}
-	}
 
-	if b, err := json.MarshalIndent(obj, "", "  "); err != nil {
-		log.Fatalf("error marshalling: %v", err)
-	} else {
-		fmt.Printf("%s\n", b)
+		for _, arg := range os.Args[1:] {
+			var err error
+			obj, err = ft(obj, arg)
+			if err == errUnrecognizedOp || err == errIllegalOp {
+				log.Fatalf("error with %q: %v", arg, err)
+			}
+			if err != nil {
+				return
+			}
+		}
+
+		if obj == nil {
+			continue
+		}
+
+		if b, err := json.MarshalIndent(obj, "", "  "); err != nil {
+			log.Fatalf("error marshalling: %v", err)
+		} else {
+			fmt.Printf("%s\n", b)
+		}
 	}
 }
 
