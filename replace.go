@@ -42,7 +42,41 @@ func getExplicitField(obj interface{}, from, field string) (interface{}, error) 
 }
 
 func setExplicitIndex(obj interface{}, to string, setv interface{}, index string) (interface{}, error) {
-	return obj, nil
+	rto := strings.TrimPrefix(to, fmt.Sprintf("[%s]", index))
+	idx, err := strconv.ParseInt(index, 10, 64)
+	if err != nil {
+		panic(fmt.Sprintf("somehow got bad strconv.ParseInt(%q): %v", index, err))
+	}
+
+	v, ok := obj.([]interface{})
+	if !ok {
+		return nil, errors.New("not a list")
+	}
+
+	// build up the list if it's not big enough
+	for int(idx) >= len(v) {
+		v = append(v, nil)
+	}
+
+	if rto == "" {
+		v[idx] = setv
+		return v, nil
+	}
+
+	if v[idx] == nil {
+		if sv, err := newFieldObjRto(rto); err != nil {
+			return nil, err
+		} else {
+			v[idx] = sv
+		}
+	}
+
+	if sr, err := setValue(v[idx], rto, setv); err != nil {
+		return nil, err
+	} else {
+		v[idx] = sr
+		return v, nil
+	}
 }
 
 func setExplicitField(obj interface{}, to string, setv interface{}, field string) (interface{}, error) {
@@ -52,25 +86,26 @@ func setExplicitField(obj interface{}, to string, setv interface{}, field string
 	if !ok {
 		return nil, errors.New("not a structure")
 	}
-	var sv interface{}
-	var fok bool
-	if sv, fok = v[field]; !fok {
-		if rto == "" {
-			v[field] = setv
-			return v, nil
-		}
-		var err error
-		sv, err = newFieldObjRto(rto)
-		if err != nil {
-			return nil, err
-		}
-		v[field] = sv
+
+	if rto == "" {
+		v[field] = setv
+		return v, nil
 	}
-	if sr, err := setValue(sv, rto, setv); err == nil {
+
+	if _, ok := v[field]; !ok {
+		if sv, err := newFieldObjRto(rto); err != nil {
+			return nil, err
+		} else {
+			v[field] = sv
+		}
+	}
+
+	if sr, err := setValue(v[field], rto, setv); err != nil {
+		return nil, err
+	} else {
 		v[field] = sr
 		return v, nil
 	}
-	return nil, errors.New("value not found")
 }
 
 func newFieldObjRto(rto string) (interface{}, error) {
