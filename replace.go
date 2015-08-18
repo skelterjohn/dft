@@ -48,18 +48,37 @@ func setExplicitIndex(obj interface{}, to string, setv interface{}, index string
 func setExplicitField(obj interface{}, to string, setv interface{}, field string) (interface{}, error) {
 	// log.Printf("sef %q %v %q", to, setv, field)
 	rto := strings.TrimPrefix(to, fmt.Sprintf(".%s", field))
-	if v, ok := obj.(map[string]interface{}); ok {
-		if sv, ok := v[field]; ok {
-			if sr, err := setValue(sv, rto, setv); err == nil {
-				v[field] = sr
-				return v, nil
-			}
-			return nil, errors.New("value not found")
-		} else if rto == "" {
+	v, ok := obj.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("not a structure")
+	}
+	var sv interface{}
+	var fok bool
+	if sv, fok = v[field]; !fok {
+		if rto == "" {
 			v[field] = setv
 			return v, nil
 		}
-		return nil, errors.New("field not found")
+		var err error
+		sv, err = newFieldObjRto(rto)
+		if err != nil {
+			return nil, err
+		}
+		v[field] = sv
 	}
-	return nil, errors.New("not a structure")
+	if sr, err := setValue(sv, rto, setv); err == nil {
+		v[field] = sr
+		return v, nil
+	}
+	return nil, errors.New("value not found")
+}
+
+func newFieldObjRto(rto string) (interface{}, error) {
+	if strings.HasPrefix(rto, ".") {
+		return map[string]interface{}{}, nil
+	}
+	if strings.HasPrefix(rto, "[") {
+		return make([]interface{}, 0, 1), nil
+	}
+	return nil, errIllegalOp
 }
