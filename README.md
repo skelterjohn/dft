@@ -8,7 +8,50 @@ Each filter and transform is applied to the entire object in the order they appe
 
 #examples#
 
-one day...
+####filter Google Compute Engine instances by metadata key####
+
+```
+$ cat in.json 
+[
+  {
+    "metadata": {
+      "items": [
+        {
+          "key": "foremanID",
+          "value": "foreman-not-on-borg-jasmuth"
+        },
+        {
+          "key": "startup-script",
+          "value": "/root/start_worker.bash"
+        }
+      ]
+    },
+    "name": "worker-ecba9d66-1c90-465c-8dd0-12e3ae867b66"
+  },
+  {
+    "metadata": {
+      "items": [
+        {
+          "key": "foremanID",
+          "value": "cloud-build-dev/devel.foreman.server/vn/0"
+        },
+        {
+          "key": "startup-script",
+          "value": "/root/start_worker.bash"
+        }
+      ]
+    },
+    "name": "worker-f4b6f6b1-088b-4c14-ae5e-2b31c0cbe305"
+  }
+]
+$ cat in.json | dft 'f:[].metadata.items[].key=foremanID' 't:[]{.metadata.items[0].value=.foremanID}' 'f:[]@foremanID,name' 'f:[].foremanID=.*jasmuth'
+[
+  {
+    "foremanID": "foreman-not-on-borg-jasmuth",
+    "name": "worker-ecba9d66-1c90-465c-8dd0-12e3ae867b66"
+  }
+]
+```
 
 #specification#
 
