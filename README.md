@@ -45,7 +45,11 @@ $ cat in.json
     "name": "worker-f4b6f6b1-088b-4c14-ae5e-2b31c0cbe305"
   }
 ]
-$ cat in.json | dft 'f:[].metadata.items[].key=foremanID' 't:[]{.metadata.items[0].value=.foremanID}' 'f:[]@foremanID,name' 'f:[].foremanID=.*jasmuth'
+$ cat in.json | dft \
+      'f:[].metadata.items[].key=foremanID' \
+      't:[]{.metadata.items[0].value=.foremanID}' \
+      'f:[]@foremanID,name' \
+      'f:[].foremanID=.*jasmuth'
 [
   {
     "foremanID": "foreman-not-on-borg-jasmuth",
