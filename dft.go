@@ -127,14 +127,14 @@ func transform(obj interface{}, targ string) (interface{}, error) {
 		return transformExplicitField(obj, targ, field)
 	}
 
-	if from, to, ok := matchReplace(targ); ok {
-		return replace(obj, from, to)
+	if to, from, ok := matchReplace(targ); ok {
+		return replace(obj, to, from)
 	}
 
-	return obj, nil
+	return nil, errUnrecognizedOp
 }
 
-func replace(obj interface{}, from, to string) (interface{}, error) {
+func replace(obj interface{}, to, from string) (interface{}, error) {
 	// log.Printf("replace %q %q", from, to)
 	v, err := getValue(obj, from)
 	if err != nil {

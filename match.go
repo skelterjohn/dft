@@ -148,7 +148,7 @@ func matchCut(farg string) ([]string, bool) {
 	return strings.Split(farg[1:], ","), true
 }
 
-func matchReplace(targ string) (from, to string, ok bool) {
+func matchReplace(targ string) (to, from string, ok bool) {
 	if !strings.HasPrefix(targ, "{") {
 		return "", "", false
 	}

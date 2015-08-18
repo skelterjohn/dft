@@ -13,6 +13,8 @@ func transformAllIndices(obj interface{}, targ string) (interface{}, error) {
 		for i, sv := range v {
 			if sr, err := transform(sv, rtarg); err == nil {
 				v[i] = sr
+			} else if err == errUnrecognizedOp {
+				return nil, err
 			}
 		}
 		return v, nil
@@ -29,6 +31,8 @@ func transformExplicitIndex(obj interface{}, targ, index string) (interface{}, e
 	if v, ok := obj.([]interface{}); ok {
 		if sr, err := transform(v[idx], rtarg); err == nil {
 			v[idx] = sr
+		} else if err == errUnrecognizedOp {
+			return nil, err
 		}
 		return v, nil
 	}
@@ -41,6 +45,8 @@ func transformAllFields(obj interface{}, targ string) (interface{}, error) {
 		for k, sv := range v {
 			if sr, err := transform(sv, rtarg); err == nil {
 				v[k] = sr
+			} else if err == errUnrecognizedOp {
+				return nil, err
 			}
 		}
 		return v, nil
@@ -53,6 +59,8 @@ func transformExplicitField(obj interface{}, targ, field string) (interface{}, e
 	if v, ok := obj.(map[string]interface{}); ok {
 		if sr, err := transform(v[field], rtarg); err == nil {
 			v[field] = sr
+		} else if err == errUnrecognizedOp {
+			return nil, err
 		}
 		return v, nil
 	}

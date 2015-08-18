@@ -46,7 +46,7 @@ func filterListExcludeMiss(obj interface{}, farg string) (interface{}, error) {
 	// log.Printf("flem: %v, %q", obj, farg)
 	rfarg := strings.TrimPrefix(farg, "[]")
 	if v, ok := obj.([]interface{}); ok {
-		var r []interface{}
+		r := make([]interface{}, 0, 0)
 		for _, subobj := range v {
 			rsubobj, err := filter(subobj, rfarg)
 			if err == nil {
