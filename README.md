@@ -2,7 +2,7 @@ dft is a tool for (d)ata (f)iltering and (t)ransformation.
 
 Data comes in on stdin, formatted as a json blob (for now), and comes out in the same format after having had the filters and transformations applied.
 
-`Usage: dft [FILTER|TRANSFORM]*`
+`Usage: dft [FILTER|TRANSFORM]* [OUTPUT]`
 
 Each filter and transform is applied to the entire object in the order they appear on the command line.
 
@@ -98,4 +98,10 @@ A transform begins with the string `t:`, has some operators for digging down int
 
 ```.()``` - struct "all". Apply the remainder of the transform to all fields in the structure.
 
-```{<get>,<set>}``` - value replace. The "get" expression is like a general transform operator, except `[]` and `.()` are disallowed. The "set" expression is either `.<field>` or `[<index>]`, with nothing else.
+```{<set>:<get>}``` - value replace. The "set" and get" expressions are like a general transform operators, except `[]` and `.()` are disallowed.
+
+##output##
+
+Output may be omitted for json formatting.
+
+If the output is ```template:<format>```, the format is used with `text/template` to format the object into stdout. ```templatefile:<path>``` is the same, except the template format is taken from the file.
