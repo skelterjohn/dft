@@ -78,10 +78,8 @@ func ft(obj interface{}, arg string) (interface{}, error) {
 		return filter(obj, strings.TrimPrefix(arg, "f:"))
 	case strings.HasPrefix(arg, "t:"):
 		return transform(obj, strings.TrimPrefix(arg, "t:"))
-	case strings.HasPrefix(arg, "templatefile:"):
-		return nil, printTemplateFile(obj, strings.TrimPrefix(arg, "templatefile:"))
-	case strings.HasPrefix(arg, "template:"):
-		return nil, printTemplate(obj, strings.TrimPrefix(arg, "template:"))
+	case strings.HasPrefix(arg, "o:"):
+		return nil, output(obj, strings.TrimPrefix(arg, "o:"))
 	default:
 		return nil, errUnrecognizedOp
 	}
@@ -154,6 +152,17 @@ func transform(obj interface{}, targ string) (interface{}, error) {
 	}
 
 	return nil, errUnrecognizedOp
+}
+
+func output(obj interface{}, oarg string) error {
+	switch {
+	case strings.HasPrefix(oarg, "templatefile="):
+		return printTemplateFile(obj, strings.TrimPrefix(oarg, "templatefile="))
+	case strings.HasPrefix(oarg, "template="):
+		return printTemplate(obj, strings.TrimPrefix(oarg, "template="))
+	default:
+		return errUnrecognizedOp
+	}
 }
 
 func replace(obj interface{}, to, from string) (interface{}, error) {

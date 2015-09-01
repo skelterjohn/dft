@@ -102,6 +102,6 @@ A transform begins with the string `t:`, has some operators for digging down int
 
 ##output##
 
-Output may be omitted for json formatting.
+Outputs begin with the string `o:`, and may be omitted to use JSON formatting.
 
-If the output is ```template:<format>```, the format is used with `text/template` to format the object into stdout. ```templatefile:<path>``` is the same, except the template format is taken from the file.
+If the output is ```o:template=<format>```, the format is used with `text/template` to format the object into stdout. ```o:templatefile=<path>``` is the same, except the template format is taken from the file.
