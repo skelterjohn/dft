@@ -41,15 +41,13 @@ func apply(in io.Reader, out io.Writer, args []string) error {
 		for i, arg := range args {
 			var err error
 			obj, err = ft(obj, arg)
-			// if err == errUnrecognizedOp || err == errIllegalOp {
-			if err != nil {
-				log.Fatalf("error with %q: %v", arg, err)
+			if err == errUnrecognizedOp || err == errIllegalOp {
+				return fmt.Errorf("error with %q: %v", arg, err)
 				continue
 			}
-			// }
-			// if err != nil {
-			// 	continue
-			// }
+			if err != nil {
+				continue
+			}
 
 			if obj == nil {
 				if i != len(args)-1 {
