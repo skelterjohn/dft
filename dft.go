@@ -26,19 +26,18 @@ func init() {
 	log.SetPrefix("")
 }
 
-func main() {
-	dec := json.NewDecoder(os.Stdin)
+func apply(in io.Reader, out io.Writer, args []string) error {
+	dec := json.NewDecoder(in)
 
 	for {
 		var obj interface{}
 		if err := dec.Decode(&obj); err != nil {
 			if err == io.EOF {
-				return
+				return nil
 			}
-			log.Fatalf("error reading stdin: %v", err)
+			return fmt.Errorf("error reading stdin: %v", err)
 		}
 
-		args := os.Args[1:]
 		for i, arg := range args {
 			var err error
 			obj, err = ft(obj, arg)
@@ -65,10 +64,17 @@ func main() {
 		}
 
 		if b, err := json.MarshalIndent(obj, "", "  "); err != nil {
-			log.Fatalf("error marshalling: %v", err)
+			return fmt.Errorf("error marshalling: %v", err)
 		} else {
-			fmt.Printf("%s\n", b)
+			fmt.Fprintf(out, "%s\n", b)
 		}
+	}
+	return nil
+}
+
+func main() {
+	if err := apply(os.Stdin, os.Stdout, os.Args[1:]); err != nil {
+		log.Fatal(err)
 	}
 }
 
