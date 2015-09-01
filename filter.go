@@ -86,7 +86,7 @@ func filterFieldsExcludeMiss(obj interface{}, farg string) (interface{}, error) 
 }
 
 func filterFieldsAtLeastOne(obj interface{}, farg string) (interface{}, error) {
-	rfarg := strings.TrimPrefix(farg, ".()")
+	rfarg := strings.TrimPrefix(farg, ".(E)")
 	if v, ok := obj.(map[string]interface{}); ok {
 		for _, subobj := range v {
 			if _, err := filter(subobj, rfarg); err == nil {
