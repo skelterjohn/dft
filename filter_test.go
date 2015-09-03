@@ -42,6 +42,32 @@ func TestValue(t *testing.T) {
 		expectedOutput: `[1,2,3]`,
 	})
 
+	// test field or index presence by omitting the =
+	testCase(t, tc{
+		name:           "simple field presence match",
+		input:          `{"x":"y"}`,
+		args:           []string{"f:.x"},
+		expectedOutput: `{"x":"y"}`,
+	})
+	testCase(t, tc{
+		name:           "simple field presence cut",
+		input:          `{"x":"y"}`,
+		args:           []string{"f:.z"},
+		expectedOutput: "",
+	})
+	testCase(t, tc{
+		name:           "simple index presence match",
+		input:          `[0,1,2]`,
+		args:           []string{"f:[1]"},
+		expectedOutput: `[0,1,2]`,
+	})
+	testCase(t, tc{
+		name:           "simple index presence cut",
+		input:          `[0,1,2]`,
+		args:           []string{"f:[3]"},
+		expectedOutput: "",
+	})
+
 	// nested fields and indices with [<index>].<field>, or .<field>[<index>]
 	testCase(t, tc{
 		name:           "nested cut, index then field",
