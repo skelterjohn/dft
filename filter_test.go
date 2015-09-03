@@ -16,90 +16,90 @@ import (
 func TestValue(t *testing.T) {
 	// test field values using .<field>=<value>
 	testCase(t, tc{
-		name:           "simple field cut",
-		input:          `{"x":"y"}`,
-		args:           []string{"f:.x=z"},
-		expectedOutput: "",
+		name:         "simple field cut",
+		input:        `{"x":"y"}`,
+		args:         []string{"f:.x=z"},
+		expectedJSON: "",
 	})
 	testCase(t, tc{
-		name:           "simple field match",
-		input:          `{"x":"y"}`,
-		args:           []string{"f:.x=y"},
-		expectedOutput: `{"x":"y"}`,
+		name:         "simple field match",
+		input:        `{"x":"y"}`,
+		args:         []string{"f:.x=y"},
+		expectedJSON: `{"x":"y"}`,
 	})
 
 	// test index values using [<index>]=<value>
 	testCase(t, tc{
-		name:           "simple index cut",
-		input:          `[1,2,3]`,
-		args:           []string{"f:[1]=1"},
-		expectedOutput: "",
+		name:         "simple index cut",
+		input:        `[1,2,3]`,
+		args:         []string{"f:[1]=1"},
+		expectedJSON: "",
 	})
 	testCase(t, tc{
-		name:           "simple index match",
-		input:          `[1,2,3]`,
-		args:           []string{"f:[1]=2"},
-		expectedOutput: `[1,2,3]`,
+		name:         "simple index match",
+		input:        `[1,2,3]`,
+		args:         []string{"f:[1]=2"},
+		expectedJSON: `[1,2,3]`,
 	})
 
 	// test field or index presence by omitting the =
 	testCase(t, tc{
-		name:           "simple field presence match",
-		input:          `{"x":"y"}`,
-		args:           []string{"f:.x"},
-		expectedOutput: `{"x":"y"}`,
+		name:         "simple field presence match",
+		input:        `{"x":"y"}`,
+		args:         []string{"f:.x"},
+		expectedJSON: `{"x":"y"}`,
 	})
 	testCase(t, tc{
-		name:           "simple field presence cut",
-		input:          `{"x":"y"}`,
-		args:           []string{"f:.z"},
-		expectedOutput: "",
+		name:         "simple field presence cut",
+		input:        `{"x":"y"}`,
+		args:         []string{"f:.z"},
+		expectedJSON: "",
 	})
 	testCase(t, tc{
-		name:           "simple index presence match",
-		input:          `[0,1,2]`,
-		args:           []string{"f:[1]"},
-		expectedOutput: `[0,1,2]`,
+		name:         "simple index presence match",
+		input:        `[0,1,2]`,
+		args:         []string{"f:[1]"},
+		expectedJSON: `[0,1,2]`,
 	})
 	testCase(t, tc{
-		name:           "simple index presence cut",
-		input:          `[0,1,2]`,
-		args:           []string{"f:[3]"},
-		expectedOutput: "",
+		name:         "simple index presence cut",
+		input:        `[0,1,2]`,
+		args:         []string{"f:[3]"},
+		expectedJSON: "",
 	})
 
 	// nested fields and indices with [<index>].<field>, or .<field>[<index>]
 	testCase(t, tc{
-		name:           "nested cut, index then field",
-		input:          `[{"x":"y"},{"x":"z"}]`,
-		args:           []string{"f:[0].x=z"},
-		expectedOutput: "",
+		name:         "nested cut, index then field",
+		input:        `[{"x":"y"},{"x":"z"}]`,
+		args:         []string{"f:[0].x=z"},
+		expectedJSON: "",
 	})
 	testCase(t, tc{
-		name:           "nested match, index then field",
-		input:          `[{"x":"y"},{"x":"z"}]`,
-		args:           []string{"f:[0].x=y"},
-		expectedOutput: `[{"x":"y"},{"x":"z"}]`,
+		name:         "nested match, index then field",
+		input:        `[{"x":"y"},{"x":"z"}]`,
+		args:         []string{"f:[0].x=y"},
+		expectedJSON: `[{"x":"y"},{"x":"z"}]`,
 	})
 	testCase(t, tc{
-		name:           "nested match, field then index",
-		input:          `{"x":[1,2,3],"y":["a", "b", "c"]}`,
-		args:           []string{"f:.x[1]=2"},
-		expectedOutput: `{"x":[1,2,3],"y":["a", "b", "c"]}`,
+		name:         "nested match, field then index",
+		input:        `{"x":[1,2,3],"y":["a", "b", "c"]}`,
+		args:         []string{"f:.x[1]=2"},
+		expectedJSON: `{"x":[1,2,3],"y":["a", "b", "c"]}`,
 	})
 
 	// what's matched can be a regular expression
 	testCase(t, tc{
-		name:           "regexp field match",
-		input:          `{"x": "abc123"}`,
-		args:           []string{"f:.x=.*c12.*$"},
-		expectedOutput: `{"x": "abc123"}`,
+		name:         "regexp field match",
+		input:        `{"x": "abc123"}`,
+		args:         []string{"f:.x=.*c12.*$"},
+		expectedJSON: `{"x": "abc123"}`,
 	})
 	testCase(t, tc{
-		name:           "regexp field cut",
-		input:          `{"x": "abc123"}`,
-		args:           []string{"f:.x=.*c12$"},
-		expectedOutput: "",
+		name:         "regexp field cut",
+		input:        `{"x": "abc123"}`,
+		args:         []string{"f:.x=.*c12$"},
+		expectedJSON: "",
 	})
 }
 
@@ -107,37 +107,37 @@ func TestValue(t *testing.T) {
 func TestExclusion(t *testing.T) {
 	// a list can be trimmed down using []
 	testCase(t, tc{
-		name:           "simple list exclusion",
-		input:          `[1,2,3,2]`,
-		args:           []string{"f:[]=2"},
-		expectedOutput: `[2,2]`,
+		name:         "simple list exclusion",
+		input:        `[1,2,3,2]`,
+		args:         []string{"f:[]=2"},
+		expectedJSON: `[2,2]`,
 	})
 	testCase(t, tc{
-		name:           "nested list exclusion",
-		input:          `[{"x":"y1", "w":"z1"},{"x":"y2", "w":"z2"}]`,
-		args:           []string{"f:[].x=y1"},
-		expectedOutput: `[{"w":"z1","x":"y1"}]`,
+		name:         "nested list exclusion",
+		input:        `[{"x":"y1", "w":"z1"},{"x":"y2", "w":"z2"}]`,
+		args:         []string{"f:[].x=y1"},
+		expectedJSON: `[{"w":"z1","x":"y1"}]`,
 	})
 	// even to nothing
 	testCase(t, tc{
-		name:           "complete list exclusion",
-		input:          `[1,2,3,2]`,
-		args:           []string{"f:[]=4"},
-		expectedOutput: `[]`,
+		name:         "complete list exclusion",
+		input:        `[1,2,3,2]`,
+		args:         []string{"f:[]=4"},
+		expectedJSON: `[]`,
 	})
 
 	// fields can be filtered out as well using .()
 	testCase(t, tc{
-		name:           "simple field exclusion",
-		input:          `{"x":1,"y":2,"z":2}`,
-		args:           []string{"f:.()=2"},
-		expectedOutput: `{"y":2,"z":2}`,
+		name:         "simple field exclusion",
+		input:        `{"x":1,"y":2,"z":2}`,
+		args:         []string{"f:.()=2"},
+		expectedJSON: `{"y":2,"z":2}`,
 	})
 	testCase(t, tc{
-		name:           "complete field exclusion",
-		input:          `{"x":1,"y":2,"z":2}`,
-		args:           []string{"f:.()=3"},
-		expectedOutput: `{}`,
+		name:         "complete field exclusion",
+		input:        `{"x":1,"y":2,"z":2}`,
+		args:         []string{"f:.()=3"},
+		expectedJSON: `{}`,
 	})
 }
 
@@ -146,17 +146,17 @@ func TestExclusion(t *testing.T) {
 func TestExistence(t *testing.T) {
 	// test if at least one index matches using [E]
 	testCase(t, tc{
-		name:           "simple index existence",
-		input:          `[1,2,3,2]`,
-		args:           []string{"f:[E]=2"},
-		expectedOutput: `[1,2,3,2]`,
+		name:         "simple index existence",
+		input:        `[1,2,3,2]`,
+		args:         []string{"f:[E]=2"},
+		expectedJSON: `[1,2,3,2]`,
 	})
 	// test if at least one field matches using .(E)
 	testCase(t, tc{
-		name:           "simple field existence",
-		input:          `{"x":1,"y":2,"z":2}`,
-		args:           []string{"f:.(E)=2"},
-		expectedOutput: `{"x":1,"y":2,"z":2}`,
+		name:         "simple field existence",
+		input:        `{"x":1,"y":2,"z":2}`,
+		args:         []string{"f:.(E)=2"},
+		expectedJSON: `{"x":1,"y":2,"z":2}`,
 	})
 
 	// nest an existence match under an exclusion match
@@ -173,8 +173,8 @@ func TestExistence(t *testing.T) {
 			  	"y":"the worst"
 			  }
 			]`,
-		args:           []string{"f:[].x[E]=john"},
-		expectedOutput: `[{"x":["john", "stephanie"], "y":"the best"}]`,
+		args:         []string{"f:[].x[E]=john"},
+		expectedJSON: `[{"x":["john", "stephanie"], "y":"the best"}]`,
 	})
 }
 
@@ -215,7 +215,7 @@ func TestMulti(t *testing.T) {
 			]`,
 		// read: in any item, there exists a meta item with the right key/val
 		args: []string{"f:[].meta[E]{.key=name,.value=john}"},
-		expectedOutput: `
+		expectedJSON: `
 			[
 			  {
 			  	"meta":[
@@ -269,7 +269,7 @@ func TestCut(t *testing.T) {
 			  }
 			]`,
 		args: []string{"f:[]@useful"},
-		expectedOutput: `
+		expectedJSON: `
 			[
 			  {
 			    "useful":"information"
@@ -281,10 +281,10 @@ func TestCut(t *testing.T) {
 	})
 	// same for indices
 	testCase(t, tc{
-		name:           "only the second element",
-		input:          `[1,2,3,4,5]`,
-		args:           []string{"f:@1"},
-		expectedOutput: `[2]`,
+		name:         "only the second element",
+		input:        `[1,2,3,4,5]`,
+		args:         []string{"f:@1"},
+		expectedJSON: `[2]`,
 	})
 }
 
@@ -326,7 +326,7 @@ func TestManyFilters(t *testing.T) {
 			"f:[].meta[E]{.key=name,.value=john}",
 			"f:[]@useful",
 		},
-		expectedOutput: `
+		expectedJSON: `
 			[
 			  {
 			    "useful":"information"
@@ -343,8 +343,9 @@ type tc struct {
 	name           string
 	input          string
 	args           []string
-	expectedOutput string
+	expectedJSON   string
 	expectedError  string
+	expectedOutput string
 }
 
 func regularizeJSON(s string) string {
@@ -372,10 +373,19 @@ func testCase(t *testing.T, tc tc) bool {
 			return false
 		}
 	}
-	eo := strings.TrimSpace(regularizeJSON(tc.expectedOutput))
-	o := strings.TrimSpace(buf.String())
-	if eo != o {
-		t.Errorf("for test %q: got\n%s\nwant:\n%s\n", tc.name, o, eo)
+
+	got := strings.TrimSpace(buf.String())
+	var want string
+
+	if tc.expectedJSON != "" {
+		want = strings.TrimSpace(regularizeJSON(tc.expectedJSON))
+	}
+	if tc.expectedOutput != "" {
+		want = strings.TrimSpace(tc.expectedOutput)
+	}
+
+	if got != want {
+		t.Errorf("for test %q: got\n%s\nwant:\n%s\n", tc.name, got, want)
 		return false
 	}
 	return true
