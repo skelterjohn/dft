@@ -39,7 +39,7 @@ func transformExplicitIndex(obj interface{}, targ, index string) (interface{}, e
 }
 
 func transformAllFields(obj interface{}, targ string) (interface{}, error) {
-	rtarg := strings.TrimPrefix(targ, "()")
+	rtarg := strings.TrimPrefix(targ, ".()")
 	if v, ok := obj.(map[string]interface{}); ok {
 		for k, sv := range v {
 			if sr, err := transform(sv, rtarg); err == nil {
