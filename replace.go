@@ -19,8 +19,9 @@ func getExplicitIndex(obj interface{}, from, index string) (interface{}, error) 
 		}
 		if sr, err := getValue(v[idx], rfrom); err == nil {
 			return sr, nil
+		} else {
+			return nil, err
 		}
-		return nil, errNotFound
 	}
 	return nil, errNotList
 
@@ -32,8 +33,9 @@ func getExplicitField(obj interface{}, from, field string) (interface{}, error) 
 		if sv, ok := v[field]; ok {
 			if sr, err := getValue(sv, rfrom); err == nil {
 				return sr, nil
+			} else {
+				return nil, err
 			}
-			return nil, errNotFound
 		}
 		return nil, errNotFound
 	}

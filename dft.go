@@ -198,7 +198,7 @@ func getValue(obj interface{}, from string) (interface{}, error) {
 		return getExplicitField(obj, from, field)
 	}
 
-	return nil, errIllegalOp
+	return nil, fmt.Errorf("cannot use %q as source", from)
 }
 
 func setValue(obj interface{}, to string, v interface{}) (interface{}, error) {
