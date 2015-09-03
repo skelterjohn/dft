@@ -11,10 +11,13 @@ import (
 func TestTemplates(t *testing.T) {
 	// inline a text/template with o:template=<format>
 	testCase(t, tc{
-		name:           "print every first element",
-		input:          `[{"x":1},{"x":2}]`,
-		args:           []string{`o:template={{range .}}{{printf "%v\n" .x}}{{end}}`},
-		expectedOutput: "1\n2",
+		name:  "print every first element",
+		input: `[{"x":1},{"x":2}]`,
+		args:  []string{`o:template={{range .}}{{printf "%v\n" .x}}{{end}}`},
+		expectedOutput: `
+			1
+			2
+			`,
 	})
 	// you can use a file instead with o:templatefile=<file>, but it's
 	// hard to have a unit test that explicitly uses the filesystem.
@@ -38,17 +41,17 @@ func TestManyObjects(t *testing.T) {
 		`,
 		args: []string{"f:.x=3"},
 		expectedOutput: `
-{
-  "x": 3,
-  "y": 2,
-  "z": 3
-}
-{
-  "x": 3,
-  "y": 3,
-  "z": 4
-}
-`,
+			{
+			  "x": 3,
+			  "y": 2,
+			  "z": 3
+			}
+			{
+			  "x": 3,
+			  "y": 3,
+			  "z": 4
+			}
+			`,
 	})
 
 	// using templates you can make a list of json objects look like a nice table
@@ -63,8 +66,8 @@ func TestManyObjects(t *testing.T) {
 		`,
 		args: []string{"f:.x=3", `o:template={{if .}}{{printf "%v %v\n" .y .z}}{{end}}`},
 		expectedOutput: `
-2 3
-3 4
-`,
+			2 3
+			3 4
+			`,
 	})
 }

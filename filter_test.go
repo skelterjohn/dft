@@ -3,9 +3,11 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"strings"
 	"testing"
+	"unicode"
 )
 
 // This test file is intended to be read from top to bottom as a tutorial
@@ -348,6 +350,44 @@ type tc struct {
 	expectedOutput string
 }
 
+// dedent removes any common line indentation
+func dedent(s string) string {
+	var common []rune
+	lines := strings.Split(s, "\n")
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+		leading := make([]rune, 100)[:0]
+		for _, c := range line {
+			if !unicode.IsSpace(c) {
+				break
+			}
+			leading = append(leading, c)
+		}
+		if common == nil {
+			common = leading
+			continue
+		}
+		for i := range common {
+			if common[i] != leading[i] {
+				common = common[:i]
+				break
+			}
+		}
+	}
+	var buf bytes.Buffer
+	for _, line := range lines {
+		if line == "" {
+			fmt.Fprintln(&buf, line)
+			continue
+		}
+		runes := []rune(line)[len(common):]
+		fmt.Fprintf(&buf, "%s\n", string(runes))
+	}
+	return buf.String()
+}
+
 func regularizeJSON(s string) string {
 	if s == "" {
 		return ""
@@ -381,7 +421,7 @@ func testCase(t *testing.T, tc tc) bool {
 		want = strings.TrimSpace(regularizeJSON(tc.expectedJSON))
 	}
 	if tc.expectedOutput != "" {
-		want = strings.TrimSpace(tc.expectedOutput)
+		want = strings.TrimSpace(dedent(tc.expectedOutput))
 	}
 
 	if got != want {
