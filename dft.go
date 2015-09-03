@@ -42,7 +42,7 @@ func apply(in io.Reader, out io.Writer, args []string) error {
 
 		for i, arg := range args {
 			var err error
-			obj, err = ft(obj, arg)
+			obj, err = ft(out, obj, arg)
 			if _, isReplaceError := err.(replaceError); isReplaceError || err == errUnrecognizedOp || err == errIllegalOp {
 				return fmt.Errorf("error with %q: %v", arg, err)
 				continue
@@ -78,14 +78,14 @@ func main() {
 	}
 }
 
-func ft(obj interface{}, arg string) (interface{}, error) {
+func ft(out io.Writer, obj interface{}, arg string) (interface{}, error) {
 	switch {
 	case strings.HasPrefix(arg, "f:"):
 		return filter(obj, strings.TrimPrefix(arg, "f:"))
 	case strings.HasPrefix(arg, "t:"):
 		return transform(obj, strings.TrimPrefix(arg, "t:"))
 	case strings.HasPrefix(arg, "o:"):
-		return nil, output(obj, strings.TrimPrefix(arg, "o:"))
+		return nil, output(out, obj, strings.TrimPrefix(arg, "o:"))
 	default:
 		return nil, errUnrecognizedOp
 	}
@@ -160,12 +160,12 @@ func transform(obj interface{}, targ string) (interface{}, error) {
 	return nil, errUnrecognizedOp
 }
 
-func output(obj interface{}, oarg string) error {
+func output(out io.Writer, obj interface{}, oarg string) error {
 	switch {
 	case strings.HasPrefix(oarg, "templatefile="):
-		return printTemplateFile(obj, strings.TrimPrefix(oarg, "templatefile="))
+		return printTemplateFile(out, obj, strings.TrimPrefix(oarg, "templatefile="))
 	case strings.HasPrefix(oarg, "template="):
-		return printTemplate(obj, strings.TrimPrefix(oarg, "template="))
+		return printTemplate(out, obj, strings.TrimPrefix(oarg, "template="))
 	default:
 		return errUnrecognizedOp
 	}
@@ -217,20 +217,20 @@ func setValue(obj interface{}, to string, v interface{}) (interface{}, error) {
 	return nil, errIllegalOp
 }
 
-func printTemplateFile(obj interface{}, filename string) error {
+func printTemplateFile(out io.Writer, obj interface{}, filename string) error {
 	tmpl, err := template.ParseFiles(filename)
 	if err != nil {
 		return err
 	}
 
-	return tmpl.Execute(os.Stdout, obj)
+	return tmpl.Execute(out, obj)
 }
 
-func printTemplate(obj interface{}, format string) error {
+func printTemplate(out io.Writer, obj interface{}, format string) error {
 	tmpl, err := template.New("dft").Parse(format)
 	if err != nil {
 		return err
 	}
 
-	return tmpl.Execute(os.Stdout, obj)
+	return tmpl.Execute(out, obj)
 }
