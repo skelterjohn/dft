@@ -4,6 +4,9 @@ import (
 	"testing"
 )
 
+// This test file is intended to be read from top to bottom as a tutorial
+// on dft transforms.
+
 // TestRename demonstrates simple top-level transforms.
 func TestRename(t *testing.T) {
 	// to copy a piece of the structure to elsewhere, use {<destination>=<source>}
