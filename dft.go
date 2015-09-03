@@ -21,6 +21,8 @@ var (
 	errNotMatched = errors.New("values do not match")
 )
 
+type replaceError error
+
 func init() {
 	log.SetFlags(0)
 	log.SetPrefix("")
@@ -41,7 +43,7 @@ func apply(in io.Reader, out io.Writer, args []string) error {
 		for i, arg := range args {
 			var err error
 			obj, err = ft(obj, arg)
-			if err == errUnrecognizedOp || err == errIllegalOp {
+			if _, isReplaceError := err.(replaceError); isReplaceError || err == errUnrecognizedOp || err == errIllegalOp {
 				return fmt.Errorf("error with %q: %v", arg, err)
 				continue
 			}
@@ -173,12 +175,12 @@ func replace(obj interface{}, to, from string) (interface{}, error) {
 	// log.Printf("replace %q %q", from, to)
 	v, err := getValue(obj, from)
 	if err != nil {
-		return nil, err
+		return nil, replaceError(err)
 	}
 
 	r, err := setValue(obj, to, v)
 	if err != nil {
-		return nil, fmt.Errorf("could not set %q: %v", to, err)
+		return nil, replaceError(fmt.Errorf("could not set %q: %v", to, err))
 	}
 
 	return r, nil
