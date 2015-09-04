@@ -90,18 +90,42 @@ func TestValue(t *testing.T) {
 		expectedJSON: `{"x":[1,2,3],"y":["a", "b", "c"]}`,
 	})
 
-	// what's matched can be a regular expression
+	// what's matched can be a regular expression if you enclose with /<regexp>/
 	testCase(t, tc{
 		name:         "regexp field match",
 		input:        `{"x": "abc123"}`,
-		args:         []string{"f:.x=.*c12.*$"},
+		args:         []string{"f:.x=/.*c12.*$/"},
 		expectedJSON: `{"x": "abc123"}`,
 	})
 	testCase(t, tc{
 		name:         "regexp field cut",
 		input:        `{"x": "abc123"}`,
-		args:         []string{"f:.x=.*c12$"},
+		args:         []string{"f:.x=/.*c12$/"},
 		expectedJSON: "",
+	})
+
+	// you can also compare to other values in the object
+	testCase(t, tc{
+		name:         "compare within object match",
+		input:        `{"x":1,"y":1,"z":0}`,
+		args:         []string{"f:.x=.y"},
+		expectedJSON: `{"x":1,"y":1,"z":0}`,
+	})
+	testCase(t, tc{
+		name:         "compare within object cut",
+		input:        `{"x":1,"y":2,"z":0}`,
+		args:         []string{"f:.x=.y"},
+		expectedJSON: "",
+	})
+
+	// if you want to compare against a literal value that begins
+	// with something that looks like an object lookup, you can
+	// enclose it with quotes
+	testCase(t, tc{
+		name:         "quoted field match",
+		input:        `{"x":".y","y":"something else"}`,
+		args:         []string{`f:.x=".y"`},
+		expectedJSON: `{"x":".y","y":"something else"}`,
 	})
 }
 
@@ -233,6 +257,15 @@ func TestMulti(t *testing.T) {
 			    "useful":"information"
 			  }
 			]`,
+	})
+
+	// you can also use the { } operator to define a new root for
+	// intra-object comparisons
+	testCase(t, tc{
+		name:         "compare within nested object",
+		input:        `[{"x":1,"y":1,"z":0},{"x":1,"y":2,"z":1}]`,
+		args:         []string{"f:[]{.x=.y}"},
+		expectedJSON: `[{"x":1,"y":1,"z":0}]`,
 	})
 }
 
