@@ -20,8 +20,8 @@ $ cat in.json
     "metadata": {
       "items": [
         {
-          "key": "foremanID",
-          "value": "foreman-not-on-borg-jasmuth"
+          "key": "who",
+          "value": "owned-by-jasmuth"
         },
         {
           "key": "startup-script",
@@ -29,14 +29,14 @@ $ cat in.json
         }
       ]
     },
-    "name": "worker-ecba9d66-1c90-465c-8dd0-12e3ae867b66"
+    "name": "process-1"
   },
   {
     "metadata": {
       "items": [
         {
-          "key": "foremanID",
-          "value": "cloud-build-dev/devel.foreman.server/vn/0"
+          "key": "who",
+          "value": "owned-by-someone-else"
         },
         {
           "key": "startup-script",
@@ -44,19 +44,19 @@ $ cat in.json
         }
       ]
     },
-    "name": "worker-f4b6f6b1-088b-4c14-ae5e-2b31c0cbe305"
+    "name": "process-2"
   }
 ]
 $ cat in.json | dft \
 		'# args like this are comments' \
-		'# first, filter out objects that do not have a foremanID key' \
-		'f:[].metadata.items[].key=foremanID' \
+		'# first, filter out objects that do not have a who key' \
+		'f:[].metadata.items[].key=who' \
 		'# then copy that value to somewhere higher in the object' \
-		't:[]{.foremanID=.metadata.items[0].value}' \
-		'# remove all fields but foremanID and name' \
-		'f:[]@foremanID,name' \
+		't:[]{.who=.metadata.items[0].value}' \
+		'# remove all fields but who and name' \
+		'f:[]@who,name' \
 		'# remove items that do not have my name in the foreman ID' \
-		'f:[].foremanID=/.*jasmuth/'
+		'f:[].who=/.*jasmuth/'
 [
   {
     "foremanID": "foreman-not-on-borg-jasmuth",
