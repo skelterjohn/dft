@@ -11,7 +11,7 @@ var (
 	regexps = map[string]*regexp.Regexp{}
 )
 
-func filterExactValue(obj interface{}, farg string) (interface{}, error) {
+func filterExactValue(obj, root interface{}, farg string) (interface{}, error) {
 	// log.Printf("fev: %v, %q", obj, farg)
 	vstr := farg[1:]
 
@@ -25,29 +25,61 @@ func filterExactValue(obj interface{}, farg string) (interface{}, error) {
 			return obj, nil
 		}
 	case string:
-
-		if _, ok := regexps[vstr]; !ok {
-			re, err := regexp.Compile(vstr)
-			if err != nil {
-				return nil, err
+		// quoted raw string comparison, to allow strings to begin with
+		// one of the special prefixes: . [ /
+		if strings.HasPrefix(vstr, `"`) && strings.HasSuffix(vstr, `"`) {
+			vstr = vstr[1 : len(vstr)-1]
+			if vstr == v {
+				return obj, nil
 			}
-			regexps[vstr] = re
+			return nil, errNotMatched
 		}
-		re := regexps[vstr]
-		if re.MatchString(v) {
+		// regular expression
+		if strings.HasPrefix(vstr, `/`) && strings.HasSuffix(vstr, `/`) {
+			vstr = vstr[1 : len(vstr)-1]
+			if _, ok := regexps[vstr]; !ok {
+				re, err := regexp.Compile(vstr)
+				if err != nil {
+					return nil, err
+				}
+				regexps[vstr] = re
+			}
+			re := regexps[vstr]
+			if re.MatchString(v) {
+				return obj, nil
+			}
+		}
+		// default to raw string comparison
+		if vstr == v {
 			return obj, nil
 		}
+		return nil, errNotMatched
+
 	}
 	return nil, errNotMatched
 }
 
-func filterListExcludeMiss(obj interface{}, farg string) (interface{}, error) {
+func filterLookupValue(obj, root interface{}, farg string) (interface{}, error) {
+	rfarg := strings.TrimPrefix(farg, "=")
+
+	v, err := getValue(root, rfarg)
+	if err != nil {
+		return nil, err
+	}
+
+	if v == obj {
+		return obj, nil
+	}
+	return nil, errNotMatched
+}
+
+func filterListExcludeMiss(obj, root interface{}, farg string) (interface{}, error) {
 	// log.Printf("flem: %v, %q", obj, farg)
 	rfarg := strings.TrimPrefix(farg, "[]")
 	if v, ok := obj.([]interface{}); ok {
 		r := make([]interface{}, 0, 0)
 		for _, subobj := range v {
-			rsubobj, err := filter(subobj, rfarg)
+			rsubobj, err := filter(subobj, root, rfarg)
 			if err == nil {
 				r = append(r, rsubobj)
 			}
@@ -57,11 +89,11 @@ func filterListExcludeMiss(obj interface{}, farg string) (interface{}, error) {
 	return nil, errNotList
 }
 
-func filterListAtLeastOne(obj interface{}, farg string) (interface{}, error) {
+func filterListAtLeastOne(obj, root interface{}, farg string) (interface{}, error) {
 	rfarg := strings.TrimPrefix(farg, "[E]")
 	if v, ok := obj.([]interface{}); ok {
 		for _, subobj := range v {
-			if _, err := filter(subobj, rfarg); err == nil {
+			if _, err := filter(subobj, root, rfarg); err == nil {
 				return obj, nil
 			}
 		}
@@ -70,12 +102,12 @@ func filterListAtLeastOne(obj interface{}, farg string) (interface{}, error) {
 	return nil, errNotList
 }
 
-func filterFieldsExcludeMiss(obj interface{}, farg string) (interface{}, error) {
+func filterFieldsExcludeMiss(obj, root interface{}, farg string) (interface{}, error) {
 	rfarg := strings.TrimPrefix(farg, ".()")
 	if v, ok := obj.(map[string]interface{}); ok {
 		r := map[string]interface{}{}
 		for key, subobj := range v {
-			rsubobj, err := filter(subobj, rfarg)
+			rsubobj, err := filter(subobj, root, rfarg)
 			if err == nil {
 				r[key] = rsubobj
 			}
@@ -85,11 +117,11 @@ func filterFieldsExcludeMiss(obj interface{}, farg string) (interface{}, error) 
 	return nil, errNotStruct
 }
 
-func filterFieldsAtLeastOne(obj interface{}, farg string) (interface{}, error) {
+func filterFieldsAtLeastOne(obj, root interface{}, farg string) (interface{}, error) {
 	rfarg := strings.TrimPrefix(farg, ".(E)")
 	if v, ok := obj.(map[string]interface{}); ok {
 		for _, subobj := range v {
-			if _, err := filter(subobj, rfarg); err == nil {
+			if _, err := filter(subobj, root, rfarg); err == nil {
 				return obj, nil
 			}
 		}
@@ -98,7 +130,7 @@ func filterFieldsAtLeastOne(obj interface{}, farg string) (interface{}, error) {
 	return nil, errNotStruct
 }
 
-func filterExplicitIndex(obj interface{}, farg, index string) (interface{}, error) {
+func filterExplicitIndex(obj, root interface{}, farg, index string) (interface{}, error) {
 	// log.Printf("ei: %v, %q, %s", obj, farg, index)
 	idx, err := strconv.ParseInt(index, 10, 64)
 	if err != nil {
@@ -119,7 +151,7 @@ func filterExplicitIndex(obj interface{}, farg, index string) (interface{}, erro
 		}
 	}
 
-	subobj, err := filter(v[idx], rfarg)
+	subobj, err := filter(v[idx], root, rfarg)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +159,7 @@ func filterExplicitIndex(obj interface{}, farg, index string) (interface{}, erro
 	return v, nil
 }
 
-func filterExplicitField(obj interface{}, farg, field string) (interface{}, error) {
+func filterExplicitField(obj, root interface{}, farg, field string) (interface{}, error) {
 	// log.Printf("ef: %v, %q, %s", obj, farg, field)
 	rfarg := strings.TrimPrefix(farg, fmt.Sprintf(".%s", field))
 
@@ -144,7 +176,7 @@ func filterExplicitField(obj interface{}, farg, field string) (interface{}, erro
 		}
 	}
 
-	subobj, err := filter(v[field], rfarg)
+	subobj, err := filter(v[field], root, rfarg)
 	if err != nil {
 		return nil, err
 	}
@@ -152,11 +184,12 @@ func filterExplicitField(obj interface{}, farg, field string) (interface{}, erro
 	return v, nil
 }
 
-func filterMulti(obj interface{}, farg string, filters []string) (interface{}, error) {
+func filterMulti(obj, root interface{}, farg string, filters []string) (interface{}, error) {
 	// log.Printf("fm: %q", filters)
 	for _, f := range filters {
 		var err error
-		obj, err = filter(obj, f)
+		// the root of a multi's sub-expressions is this obj
+		obj, err = filter(obj, obj, f)
 		if err != nil {
 			return nil, err
 		}
@@ -164,7 +197,7 @@ func filterMulti(obj interface{}, farg string, filters []string) (interface{}, e
 	return obj, nil
 }
 
-func filterCut(obj interface{}, farg string, includes []string) (interface{}, error) {
+func filterCut(obj, root interface{}, farg string, includes []string) (interface{}, error) {
 	// log.Printf("fc: %v %q %q", obj, farg, includes)
 	switch v := obj.(type) {
 	case []interface{}:

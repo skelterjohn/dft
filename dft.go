@@ -84,7 +84,7 @@ func main() {
 func ft(out io.Writer, obj interface{}, arg string) (interface{}, error) {
 	switch {
 	case strings.HasPrefix(arg, "f:"):
-		return filter(obj, strings.TrimPrefix(arg, "f:"))
+		return filter(obj, obj, strings.TrimPrefix(arg, "f:"))
 	case strings.HasPrefix(arg, "t:"):
 		return transform(obj, strings.TrimPrefix(arg, "t:"))
 	case strings.HasPrefix(arg, "o:"):
@@ -94,42 +94,48 @@ func ft(out io.Writer, obj interface{}, arg string) (interface{}, error) {
 	}
 }
 
-func filter(obj interface{}, farg string) (interface{}, error) {
+func filter(obj, root interface{}, farg string) (interface{}, error) {
 	if farg == "" {
 		return nil, errUnrecognizedOp
 	}
 
+	if strings.HasPrefix(farg, "=.") {
+		return filterLookupValue(obj, root, farg)
+	}
+	if strings.HasPrefix(farg, "=[") {
+		return filterLookupValue(obj, root, farg)
+	}
 	if strings.HasPrefix(farg, "=") {
-		return filterExactValue(obj, farg)
+		return filterExactValue(obj, root, farg)
 	}
 
 	if strings.HasPrefix(farg, "[]") {
-		return filterListExcludeMiss(obj, farg)
+		return filterListExcludeMiss(obj, root, farg)
 	}
 	if strings.HasPrefix(farg, "[E]") {
-		return filterListAtLeastOne(obj, farg)
+		return filterListAtLeastOne(obj, root, farg)
 	}
 
 	if strings.HasPrefix(farg, ".()") {
-		return filterFieldsExcludeMiss(obj, farg)
+		return filterFieldsExcludeMiss(obj, root, farg)
 	}
 	if strings.HasPrefix(farg, ".(E)") {
-		return filterFieldsAtLeastOne(obj, farg)
+		return filterFieldsAtLeastOne(obj, root, farg)
 	}
 
 	if index, ok := matchExactIndex(farg); ok {
-		return filterExplicitIndex(obj, farg, index)
+		return filterExplicitIndex(obj, root, farg, index)
 	}
 	if field, ok := matchExactField(farg); ok {
-		return filterExplicitField(obj, farg, field)
+		return filterExplicitField(obj, root, farg, field)
 	}
 
 	if filters, ok := matchMulti(farg); ok {
-		return filterMulti(obj, farg, filters)
+		return filterMulti(obj, root, farg, filters)
 	}
 
 	if includes, ok := matchCut(farg); ok {
-		return filterCut(obj, farg, includes)
+		return filterCut(obj, root, farg, includes)
 	}
 
 	return obj, errUnrecognizedOp
