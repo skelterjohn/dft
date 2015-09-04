@@ -1,12 +1,14 @@
 dft is a tool for (d)ata (f)iltering and (t)ransformation.
 
-Data comes in on stdin, formatted as a json blob (for now), and comes out in the same format after having had the filters and transformations applied.
+Data comes in on stdin, formatted as a json blob (for now), and comes outafter having had the filters and transformations applied.
 
 `Usage: dft [FILTER|TRANSFORM]* [OUTPUT]`
 
 Each filter and transform is applied to the entire object in the order they appear on the command line.
 
 #examples#
+
+The test files are meant to be read from top to bottom as tutorials. Start with `filter_test.go`, then `transform_test.go`, and finally `output_test.go`.
 
 ####filter Google Compute Engine instances by metadata key####
 
@@ -46,10 +48,15 @@ $ cat in.json
   }
 ]
 $ cat in.json | dft \
-      'f:[].metadata.items[].key=foremanID' \
-      't:[]{.metadata.items[0].value=.foremanID}' \
-      'f:[]@foremanID,name' \
-      'f:[].foremanID=.*jasmuth'
+		'# args like this are comments' \
+		'# first, filter out objects that do not have a foremanID key' \
+		'f:[].metadata.items[].key=foremanID' \
+		'# then copy that value to somewhere higher in the object' \
+		't:[]{.foremanID=.metadata.items[0].value}' \
+		'# remove all fields but foremanID and name' \
+		'f:[]@foremanID,name' \
+		'# remove items that do not have my name in the foreman ID' \
+		'f:[].foremanID=/.*jasmuth/'
 [
   {
     "foremanID": "foreman-not-on-borg-jasmuth",
@@ -57,51 +64,3 @@ $ cat in.json | dft \
   }
 ]
 ```
-
-#specification#
-
-##filters##
-
-A filter begins with the string `f:`, and then has operators that dig into the object and compare values against provided input.
-
-###filter operators###
-
-```[<index>]``` - list index. Match if the rest of the filter matches this item.
-
-```[]``` - list "only". All items in the list will be filtered out if they do not match the rest of the filter.
-
-```[E]``` - list "any". If at least one of the indices matches the rest of the filter, then no indices are filtered out.
-
-```.<field>``` - object field. Match if the rest of the filter matches this item. If no operations follow, this will be a filter on the existence of the field.
-
-```.()``` - field "only". All fields in the object will be filtered out if they do not match the rest of the filter.
-
-```.(E)``` - field "any". If at least one of the fields matches the rest of the filter, then no fields are filtered out. 
-
-```=<value>``` - explicit match, if the item matches the value. May be a regular expression for strings. No operations may follow.
-
-```@<item1>,<item2>,...,<item3>``` - item cut. Filter all items whose names are not listed. May be indices or field names. No operations may follow.
-
-```{<op1>,<op2>,...,<op3>}``` - filter intersection. Match if the item matches all the subfilters. No operations may follow.
-
-##transforms##
-
-A transform begins with the string `t:`, has some operators for digging down into the object, and then a "get" and "set" expression surrounded by braces.
-
-###transform operators###
-
-```[<index>]``` - list index. Apply the remainder of the transform to the indexed item.
-
-```[]``` - list "all". Apply the remainder of the transform to all items in the list.
-
-```.<field>``` - struct field. Apply the remainder of the transform to the field.
-
-```.()``` - struct "all". Apply the remainder of the transform to all fields in the structure.
-
-```{<set>:<get>}``` - value replace. The "set" and get" expressions are like a general transform operators, except `[]` and `.()` are disallowed.
-
-##output##
-
-Outputs begin with the string `o:`, and may be omitted to use JSON formatting.
-
-If the output is ```o:template=<format>```, the format is used with `text/template` to format the object into stdout. ```o:templatefile=<path>``` is the same, except the template format is taken from the file.
