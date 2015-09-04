@@ -89,6 +89,9 @@ func ft(out io.Writer, obj interface{}, arg string) (interface{}, error) {
 		return transform(obj, strings.TrimPrefix(arg, "t:"))
 	case strings.HasPrefix(arg, "o:"):
 		return nil, output(out, obj, strings.TrimPrefix(arg, "o:"))
+	case strings.HasPrefix(arg, "#"):
+		// this is a comment, skip
+		return obj, nil
 	default:
 		return nil, errUnrecognizedOp
 	}
